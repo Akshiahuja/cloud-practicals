@@ -1,3 +1,410 @@
+PRACTICAL 01 — Linux Basics
+
+Steps:
+
+Open terminal.
+
+Create and enter folder: mkdir c_programs && cd c_programs
+
+Create file: nano hello.c
+
+Write code:
+
+#include <stdio.h>
+int main(){ printf("Hello\n"); return 0; }
+
+
+Install compiler: sudo apt install build-essential -y
+
+Compile: gcc hello.c -o hello
+
+Run: ./hello
+
+✅ PRACTICAL 02 — Network Commands
+
+Steps:
+
+Check interfaces → ip a
+
+Check routing → ip route
+
+Ping → ping google.com
+
+Install traceroute → sudo apt install traceroute -y
+
+Run traceroute → traceroute google.com
+
+Check ports → netstat -tuln
+
+ARP table → arp -n
+
+Assign IP → sudo ip addr add 192.168.10.5/24 dev eth0
+
+✅ PRACTICAL 03 — Pipe System Calls (CODE INCLUDED)
+
+Steps:
+
+cd c_programs
+
+nano pipe_demo.c
+
+Write code:
+
+#include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+
+int main(){
+    int fd[2];
+    char msg[]="Hello from Child!";
+    char buf[50];
+
+    pipe(fd);
+
+    if(fork()==0){
+        close(fd[0]);
+        write(fd[1],msg,strlen(msg)+1);
+    } else {
+        close(fd[1]);
+        read(fd[0],buf,50);
+        printf("%s\n",buf);
+    }
+    return 0;
+}
+
+
+Compile: gcc pipe_demo.c -o pipe_demo
+
+Run: ./pipe_demo
+
+✅ PRACTICAL 04 — Character Count Framing (CODE INCLUDED)
+
+Steps:
+
+cd c_programs
+
+nano char_count.c
+
+Write code:
+
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc,char*argv[]){
+    const char*msgs[]={"HELLO","WORLD","DCN"};
+    int n=3,pos=0;
+    unsigned char stream[2048];
+
+    for(int i=0;i<n;i++){
+        int len=strlen(msgs[i]);
+        unsigned char count=len+1;
+        stream[pos++]=count;
+        for(int j=0;j<len;j++)
+            stream[pos++]=msgs[i][j];
+    }
+
+    int i=0,f=1;
+    while(i<pos){
+        unsigned char count=stream[i++];
+        int plen=count-1;
+        printf("Frame %d: ",f++);
+        for(int j=0;j<plen;j++) printf("%c",stream[i++]);
+        printf("\n");
+    }
+}
+
+
+Compile: gcc char_count.c -o char_count
+
+Run: ./char_count
+
+✅ PRACTICAL 05 — Byte Stuffing (CODE INCLUDED)
+
+Steps:
+
+nano byte_stuff.c
+
+Code:
+
+#include <stdio.h>
+#include <string.h>
+#include <stdint.h>
+
+int main(int argc,char*argv[]){
+    const uint8_t FLAG=0x7E, ESC=0x7D;
+    const char*in=(argc>1)?argv[1]:"H~B}C";
+    uint8_t out[512]; int k=0;
+
+    out[k++]=FLAG;
+    for(int i=0;i<strlen(in);i++){
+        uint8_t b=in[i];
+        if(b==FLAG || b==ESC){ out[k++]=ESC; out[k++]=b^0x20; }
+        else out[k++]=b;
+    }
+    out[k++]=FLAG;
+
+    printf("Stuffed: ");
+    for(int i=0;i<k;i++) printf("%02X ",out[i]);
+}
+
+
+Compile: gcc byte_stuff.c -o byte_stuff
+
+Run: ./byte_stuff
+
+✅ PRACTICAL 06 — Bit Stuffing (CODE INCLUDED)
+
+Steps:
+
+nano bit_stuff.c
+
+Code:
+
+#include <stdio.h>
+#include <string.h>
+
+void stuff(char*in,char*out){
+    int j=0,c=0;
+    for(int i=0;in[i];i++){
+        out[j++]=in[i];
+        if(in[i]=='1') c++;
+        else c=0;
+        if(c==5){ out[j++]='0'; c=0; }
+    }
+    out[j]=0;
+}
+
+int main(){
+    char in[]="1111101111100111110110", out[500];
+    stuff(in,out);
+    printf("Stuffed: %s\n",out);
+}
+
+
+Compile: gcc bit_stuff.c -o bit_stuff
+
+Run: ./bit_stuff
+
+✅ PRACTICAL 07 — LRC (CODE INCLUDED)
+
+Steps:
+
+nano lrc.c
+
+Code:
+
+#include <stdio.h>
+
+int main(){
+    unsigned char d[]={0x4E,0x45,0x54};
+    unsigned char lrc = d[0]^d[1]^d[2];
+
+    printf("LRC = %02X\n",lrc);
+    return 0;
+}
+
+
+Compile: gcc lrc.c -o lrc
+
+Run: ./lrc
+
+✅ PRACTICAL 08 — VRC / Parity (CODE INCLUDED)
+
+Steps:
+
+nano vrc.c
+
+Code:
+
+#include <stdio.h>
+
+int parity(unsigned char x){
+    int p=0; while(x){ p^=x&1; x>>=1; } return p;
+}
+
+int main(){
+    unsigned char b=0x53;
+    int p=parity(b);
+    printf("Parity bit = %d\n",p);
+}
+
+
+Compile: gcc vrc.c -o vrc
+
+Run: ./vrc
+
+✅ PRACTICAL 09 — Checksum (CODE INCLUDED)
+
+Steps:
+
+nano checksum.c
+
+Code:
+
+#include <stdio.h>
+#include <stdint.h>
+#include <string.h>
+
+uint16_t checksum(uint8_t*d,int n){
+    uint32_t s=0;
+    for(int i=0;i<n;i+=2){
+        uint16_t w=d[i]<<8 | d[i+1];
+        s+=w; if(s>0xFFFF)s=(s&0xFFFF)+1;
+    }
+    return ~s;
+}
+
+int main(){
+    char msg[]="HELLO";
+    uint16_t cs=checksum((uint8_t*)msg,strlen(msg));
+    printf("Checksum=%04X\n",cs);
+}
+
+
+Compile: gcc checksum.c -o checksum
+
+Run: ./checksum
+
+✅ PRACTICAL 10 — CRC (CODE INCLUDED)
+
+Steps:
+
+nano crc.c
+
+Code:
+
+#include <stdio.h>
+#include <string.h>
+
+unsigned char crc8(char*msg){
+    unsigned char crc=0;
+    for(int i=0;msg[i];i++){
+        crc ^= msg[i];
+        for(int b=0;b<8;b++)
+            crc = (crc&0x80)?(crc<<1)^0x07:(crc<<1);
+    }
+    return crc;
+}
+
+int main(){
+    char msg[]="HELLO";
+    printf("CRC = %02X\n",crc8(msg));
+}
+
+
+Compile: gcc crc.c -o crc
+
+Run: ./crc
+
+✅ PRACTICAL 11 — Hamming (7,4) (CODE INCLUDED)
+
+Steps:
+
+nano hamming.c
+
+Code:
+
+#include <stdio.h>
+
+int main(){
+    int d1=1,d2=0,d3=1,d4=1;
+    int p1=d1^d2^d4;
+    int p2=d1^d3^d4;
+    int p3=d2^d3^d4;
+    int c[]={p1,p2,d1,p3,d2,d3,d4};
+
+    for(int i=0;i<7;i++) printf("%d",c[i]);
+}
+
+
+Compile: gcc hamming.c -o hamming
+
+Run: ./hamming
+
+✅ PRACTICAL 12 — Leaky Bucket (CODE INCLUDED)
+
+Steps:
+
+nano leaky_bucket.c
+
+Code:
+
+#include <stdio.h>
+int main(){
+    int cap=10,out=3,b=0;
+    int in[]={4,6,7,2,5};
+    for(int i=0;i<5;i++){
+        b+=in[i];
+        if(b>cap) b=cap;
+        int s=(b>=out)?out:b;
+        b-=s;
+        printf("%d %d %d\n",in[i],s,b);
+    }
+}
+
+
+Compile: gcc leaky_bucket.c -o leaky_bucket
+
+Run: ./leaky_bucket
+
+✅ PRACTICAL 13 — Token Bucket (CODE INCLUDED)
+
+Steps:
+
+nano token_bucket.c
+
+Code:
+
+#include <stdio.h>
+int main(){
+    int tok=0,cap=10,gen=4;
+    int req[]={2,8,7,12,5};
+    for(int i=0;i<5;i++){
+        tok+=gen; if(tok>cap) tok=cap;
+        int s = (req[i]<=tok)?req[i]:tok;
+        tok-=s;
+        printf("%d %d %d\n",req[i],s,tok);
+    }
+}
+
+
+Compile: gcc token_bucket.c -o token_bucket
+
+Run: ./token_bucket
+
+✅ PRACTICAL 14 — Password Policy
+
+Steps:
+
+Install module → sudo apt install libpam-pwquality -y
+
+View settings →
+
+sudo grep -E 'minlen|dcredit|ucredit|lcredit|ocredit' /etc/security/pwquality.conf
+
+✅ PRACTICAL 15 — SSH Setup
+
+Steps:
+
+Install SSH → sudo apt install openssh-server -y
+
+Check service → sudo systemctl status ssh
+
+Test SSH → ssh localhost
+
+Generate keys → ssh-keygen
+
+Enable keys → cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+
+
+
+
+
+
+
+
+
+
 # **Practical 01:**
 
 ### Commands to know
