@@ -1,28 +1,36 @@
 Practical 01: Implementation of CSV operations using Pandas
-`import pandas as pd   # Import the pandas library
+`import pandas as pd
 
-# 1. Read CSV file into a DataFrame
-df = pd.read_csv("data.csv")   # Make sure data.csv is in the same folder
+# Create a simple DataFrame
+data = {
+    "Name": ["Alice", "Bob", "Charlie", "David"],
+    "Age": [24, 27, 22, 32],
+    "Marks": [85, 74, 91, 66],
+}
+df = pd.DataFrame(data)
 
-# 2. Show first 5 rows
-print("First 5 rows:")
-print(df.head())
+print("=== Original DataFrame ===")
+print(df)
 
-# 3. Show basic info: column names, data types, non-null counts
-print("\nInfo about the DataFrame:")
+# Show basic info
+print("\n=== Info ===")
 print(df.info())
 
-# 4. Show statistics for numeric columns (mean, min, max, etc.)
-print("\nBasic statistics:")
+# Statistical summary
+print("\n=== Describe ===")
 print(df.describe())
 
-# 5. Select a single column (example: 'col_1')
-print("\nSingle column (col_1):")
-print(df['col_1'])
+# Selecting a single column
+print("\n=== Names column ===")
+print(df["Name"])
 
-# 6. Filter rows where col_1 > 0
-print("\nRows where col_1 > 0:")
-print(df[df['col_1'] > 0])
+# Filtering rows
+print("\n=== Students with Marks > 80 ===")
+print(df[df["Marks"] > 80])
+
+# Sorting
+print("\n=== Sorted by Marks (descending) ===")
+print(df.sort_values(by="Marks", ascending=False))
 `
 Explanation: 
 import pandas as pd
@@ -291,31 +299,75 @@ accuracy_score() → how many predictions were correct.
 Practical 7 – NLTK: Tokenization, Stemming, POS Tagging
 
 `import nltk
-# Run these once (uncomment if needed)
-# nltk.download('punkt')
-# nltk.download('averaged_perceptron_tagger')
-
-from nltk.tokenize import word_tokenize
 from nltk.stem import PorterStemmer
-from nltk import pos_tag
+from nltk.corpus import wordnet
+from nltk import word_tokenize, pos_tag, NaiveBayesClassifier
 
+# ------------------------------
+# DOWNLOAD NEEDED PACKAGES
+# ------------------------------
+nltk.download('punkt')
+nltk.download('punkt_tab')
+nltk.download('averaged_perceptron_tagger_eng')
+nltk.download('wordnet')
+
+# ------------------------------
+# SAMPLE TEXT
+# ------------------------------
 text = "Natural Language Processing helps computers understand human language."
+print("\nOriginal Text:\n", text)
 
-# Tokenization
+# ------------------------------
+# 1. TOKENIZATION
+# ------------------------------
 tokens = word_tokenize(text)
-print("Tokens:")
-print(tokens)
+print("\nTokens:\n", tokens)
 
-# Stemming
-ps = PorterStemmer()
-stems = [ps.stem(word) for word in tokens]
-print("\nStems:")
-print(stems)
+# ------------------------------
+# 2. STEMMING
+# ------------------------------
+stemmer = PorterStemmer()
+stems = [stemmer.stem(t) for t in tokens]
+print("\nStems:\n", stems)
 
-# Part-of-speech tagging
+# ------------------------------
+# 3. POS TAGGING
+# ------------------------------
 tags = pos_tag(tokens)
-print("\nPOS Tags:")
-print(tags)
+print("\nPOS Tags:\n", tags)
+
+# ------------------------------
+# 4. SEMANTIC REASONING USING WORDNET
+# ------------------------------
+synonyms = set()
+for syn in wordnet.synsets("good"):
+    for lemma in syn.lemmas():
+        synonyms.add(lemma.name())
+
+print("\nWordNet synonyms for 'good': (first 10)\n", list(synonyms)[:10])
+
+# ------------------------------
+# 5. SIMPLE TEXT CLASSIFICATION (Naive Bayes)
+# ------------------------------
+def features(words):
+    return {word: True for word in words}
+
+# Training dataset
+training_data = [
+    (features(["love", "this", "movie"]), "positive"),
+    (features(["hate", "this", "movie"]), "negative"),
+    (features(["awesome", "acting"]), "positive"),
+    (features(["terrible", "plot"]), "negative"),
+]
+
+classifier = NaiveBayesClassifier.train(training_data)
+
+# Test sentence
+test_sentence = "I love this awesome movie"
+test_features = features(test_sentence.split())
+
+print("\nTest Sentence:", test_sentence)
+print("Predicted Class:", classifier.classify(test_features))
 `
 
 Explanation
